@@ -80,11 +80,17 @@ async function load() {
              m >= min && m <= max;
     });
 
-    output = {
-    "updated_at": datetime.now(timezone.utc).isoformat(),
-    "live_count": len(matches),
-    "matches": radar_matches
-    }
+   const updated = payload.updated_at
+  ? new Date(payload.updated_at).toLocaleString("es-UY", {
+      timeZone: "America/Montevideo",
+      hour12: false
+    })
+  : "—";
+
+const totalLive = payload.live_count ?? 0;
+
+statusEl.textContent =
+  `Partidos en vivo: ${totalLive} · 0-0 entre ${min}' y ${max}': ${games.length} · Última actualización: ${updated}`;
 
     if (!games.length) {
       results.innerHTML = `<div class="panel empty">No hay partidos 0-0 que cumplan el filtro en el último dato disponible.</div>`;
