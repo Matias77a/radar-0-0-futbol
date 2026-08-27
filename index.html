@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Radar 0-0 | Fútbol en vivo</title>
+<style>
+:root { color-scheme: dark; }
+body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:#101318; color:#f5f7fa; }
+main { max-width:760px; margin:auto; padding:18px; }
+h1 { margin:0 0 5px; font-size:27px; }
+.sub { color:#aeb7c2; margin-bottom:18px; }
+.panel { background:#191e26; border:1px solid #2a313c; border-radius:14px; padding:14px; margin-bottom:14px; }
+.controls { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+label { font-size:13px; color:#b8c0ca; }
+input,button { width:100%; box-sizing:border-box; margin-top:5px; padding:11px; border-radius:9px; border:1px solid #394250; background:#11151b; color:#fff; font-size:15px; }
+button { background:#2d6cdf; border:0; font-weight:700; cursor:pointer; }
+.status { color:#aeb7c2; font-size:13px; margin-top:10px; }
+.card { background:#191e26; border:1px solid #2a313c; border-radius:14px; padding:15px; margin:10px 0; }
+.minute { font-size:24px; font-weight:800; }
+.score { font-size:27px; font-weight:800; text-align:center; margin:8px 0; }
+.teams { display:grid; grid-template-columns:1fr 70px 1fr; align-items:center; gap:8px; }
+.team:last-child { text-align:right; }
+.meta { color:#aeb7c2; font-size:13px; margin-top:8px; }
+.empty { text-align:center; padding:28px 10px; color:#aeb7c2; }
+.badge { display:inline-block; padding:4px 8px; border-radius:99px; background:#24314a; color:#9ec0ff; font-size:12px; }
+@media(max-width:500px){ .controls{grid-template-columns:1fr 1fr;} .teams{grid-template-columns:1fr 58px 1fr;} }
+</style>
+</head>
+<body>
+<main>
+  <h1>⚽ Radar 0-0</h1>
+  <div class="sub">Partidos sin goles en el segundo tiempo</div>
+
+  <section class="panel">
+    <div class="controls">
+      <div><label>Desde minuto</label><input id="min" type="number" min="46" max="120" value="46"></div>
+      <div><label>Hasta minuto</label><input id="max" type="number" min="46" max="120" value="80"></div>
+    </div>
+    <button id="refresh">🔄 Actualizar</button>
+    <div id="status" class="status">Cargando…</div>
+  </section>
+
+  <section id="results"></section>
+</main>
+
+<script>
+const DATA_URL = "data/live.json";
+
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[c]));
+}
+
+function minuteNumber(status) {
+  const m = Number(status?.elapsed ?? 0);
+  return m;
+}
+
+async function load() {
+  const statusEl = document.getElementById("status");
+  const results = document.getElementById("results");
+  const min = Number(document.getElementById("min").value);
+  const max = Number(document.getElementById("max").value);
+
+  statusEl.textContent = "Consultando último dato disponible…";
+
+  try {
+    const r = await fetch(DATA_URL + "?t=" + Date.now(), {cache:"no-store"});
+    if (!r.ok) throw new Error("No se pudo leer data/live.json");
+    const payload = await r.json();
+
+    const games = (payload.matches || []).filter(g => {
+      const m = minuteNumber(g.fixture?.status);
+      const home = g.goals?.home ?? null;
+      const away = g.goals?.away ?? null;
+      return g.fixture?.status?.short === "2H" &&
+             home === 0 && away === 0 &&
+             m >= min && m <= max;
+    });
+
+    statusEl.textContent =
+      `Última actualización: ${payload.updated_at || "—"} · ${games.length} partido(s) encontrado(s)`;
+
+    if (!games.length) {
+      results.innerHTML = `<div class="panel empty">No hay partidos 0-0 que cumplan el filtro en el último dato disponible.</div>`;
+      return;
+    }
+
+    results.innerHTML = games.map(g => {
+      const m = minuteNumber(g.fixture.status);
+      return `
+      <article class="card">
+        <span class="badge">${esc(g.league?.name || "Liga")}</span>
+        <div class="minute">${m}'</div>
+        <div class="teams">
+          <div class="team">${esc(g.teams?.home?.name)}</div>
+          <div class="score">0–0</div>
+          <div class="team">${esc(g.teams?.away?.name)}</div>
+        </div>
+        <div class="meta">${esc(g.fixture?.status?.long || "Segundo tiempo")}</div>
+      </article>`;
+    }).join("");
+  } catch (e) {
+    statusEl.textContent = "Error: " + e.message;
+    results.innerHTML = `<div class="panel empty">Todavía no hay datos publicados. Ejecutá el workflow de GitHub Actions.</div>`;
+  }
+}
+
+document.getElementById("refresh").addEventListener("click", load);
+load();
+</script>
+</body>
+</html>
