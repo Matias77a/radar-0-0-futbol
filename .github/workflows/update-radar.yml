@@ -118,9 +118,10 @@ jobs:
                   radar_matches.append(match)
 
           output = {
-              "updated_at": datetime.now(timezone.utc).isoformat(),
-              "matches": radar_matches
-          }
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+                "live_count": len(matches),
+                "matches": radar_matches
+           }
 
           os.makedirs("data", exist_ok=True)
 
