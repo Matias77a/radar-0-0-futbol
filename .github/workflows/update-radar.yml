@@ -126,6 +126,10 @@ jobs:
 
           with open("data/live.json", "w", encoding="utf-8") as f:
               json.dump(output, f, ensure_ascii=False, indent=2)
+              
+          print("Errores API:", data.get("errors"))
+          print("Resultados API:", data.get("results"))
+          print("Parametros API:", data.get("parameters"))
 
           print("Partidos en vivo recibidos:", len(matches))
           print("Partidos 0-0 en segundo tiempo:", len(radar_matches))
