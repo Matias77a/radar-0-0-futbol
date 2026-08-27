@@ -80,8 +80,11 @@ async function load() {
              m >= min && m <= max;
     });
 
-    statusEl.textContent =
-      `Última actualización: ${payload.updated_at || "—"} · ${games.length} partido(s) encontrado(s)`;
+    output = {
+    "updated_at": datetime.now(timezone.utc).isoformat(),
+    "live_count": len(matches),
+    "matches": radar_matches
+    }
 
     if (!games.length) {
       results.innerHTML = `<div class="panel empty">No hay partidos 0-0 que cumplan el filtro en el último dato disponible.</div>`;
